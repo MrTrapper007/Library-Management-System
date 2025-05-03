@@ -1,4 +1,5 @@
 # Created 03/05/25 by Riad
+from src.obj_classes.Book import Book
 
 class LibraryManager:
     def __init__(self):
@@ -21,8 +22,6 @@ class LibraryManager:
 #ADDITION NEEDED!!!!!!!
 
 # Import the Book class from the obj_classes module
-from src.obj_classes.Book import Book
-
 class LibraryManager:
     """Manages the collection of books in the library."""
 
