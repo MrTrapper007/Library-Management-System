@@ -1,4 +1,5 @@
 # Created 03/05/25 by Riad
+from src.obj_classes.Book import Book
 
 class LibraryManager:
     def __init__(self):
@@ -14,6 +15,24 @@ class LibraryManager:
         if book.isbn in self.books:
             self.books[book.isbn].total_copies += 1
             self.books[book.isbn].available_copies += 1
+            print(f"Book alr exists, added another copy")
+        else:
+            self.books[book.isbn] = book
+            print(f"Added book: '{book.title}' (ISBN: {book.isbn})")
+
+    def remove_book(self, isbn):
+        # removing books from the library
+        if isbn not in self.books:
+            print(f"Error: Book with ISBN {isbn} not found")
+            return False
+        if isbn in self.book_users:
+            print(f"Error: Book with ISBN {isbn} is borrowed, can't remove")
+            return False
+        else:
+            del self.books[isbn]
+            print(f"Removed book: '{self.books[isbn].title}' (ISBN: {isbn})")
+            return True
+
 #------------------------------------
 # Below is a draft of the class made by Gemini provided
 # By Lucca, kill yourself lucca
@@ -21,8 +40,6 @@ class LibraryManager:
 #ADDITION NEEDED!!!!!!!
 
 # Import the Book class from the obj_classes module
-from src.obj_classes.Book import Book
-
 class LibraryManager:
     """Manages the collection of books in the library."""
 
