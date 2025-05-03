@@ -33,6 +33,35 @@ class LibraryManager:
             print(f"Removed book: '{self.books[isbn].title}' (ISBN: {isbn})")
             return True
 
+# Created by Lucca 03/05/25
+    def find_book_by_isbn(self, isbn):
+        # finds a book by using it's isbn
+        return self.books.get(isbn)
+
+    def list_all_books(self):
+        # to get the list/details of all books available
+        if not self.books:
+            print("No books found")
+            return
+
+        print ("\n--- Library Book Collection ---")
+        sorted_books = sorted(self.books.values(), key=lambda book: book.title)
+        for book in sorted_books:
+            print (book)
+            # displaying of who borrowed the book
+            borrowed_by = self.book_borrowings.get(book.isbn, [])
+            if borrowed_by:
+                print(f"Borrowed by User ID: { ', '.join(borrowed_by)}")
+            print ("-" * 20)
+        print ("-----------------------------------")
+
+    def search_books(self, query):
+        # searches for books by title or author
+        found_books = []
+        query_lower = query.lower()
+
+
+
 #------------------------------------
 # Below is a draft of the class made by Gemini provided
 # By Lucca, kill yourself lucca

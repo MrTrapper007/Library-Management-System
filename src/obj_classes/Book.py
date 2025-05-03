@@ -4,7 +4,7 @@
 class Book:
     # for books in the library
     def __init__(self, isbn, title, author, genre, total_copies):
-        #initializes new books
+        #initializes new booksß
         if not isinstance(isbn, str) or not isbn:
             raise ValueError("Missing ISBN")
         if not isinstance(title, str) or not title:
