@@ -1,6 +1,25 @@
-# src/logic/LibraryManager.py
+# Created 03/05/25 by Riad
 
-#EDITION NEEDED!!!!!!!
+class LibraryManager:
+    def __init__(self):
+        # initializing the manager (do ts inside main.py)
+        self.books = {}
+        self.users = {}
+
+        self.user_books = {}
+        self.book_users = {}
+
+    def add_book(self, book):
+        # adding books to ur library
+        if book.isbn in self.books:
+            self.books[book.isbn].total_copies += 1
+            self.books[book.isbn].available_copies += 1
+
+#------------------------------------
+# Below is a draft of the class made by Gemini provided
+# By Lucca, kill yourself lucca
+
+#ADDITION NEEDED!!!!!!!
 
 # Import the Book class from the obj_classes module
 from src.obj_classes.Book import Book
