@@ -14,7 +14,6 @@ class LibraryManager:
         if book.isbn in self.books:
             self.books[book.isbn].total_copies += 1
             self.books[book.isbn].available_copies += 1
-
 #------------------------------------
 # Below is a draft of the class made by Gemini provided
 # By Lucca, kill yourself lucca
