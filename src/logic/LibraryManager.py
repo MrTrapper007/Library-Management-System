@@ -1,5 +1,5 @@
 # Created 03/05/25 by Riad
-from src.obj_classes.Book import Book
+from src.obj_classes import Book
 
 class LibraryManager:
     def __init__(self):
@@ -130,146 +130,62 @@ class LibraryManager:
 
 # --- Borrowing and Returning Methods ---
 
-
-
-
-
-#------------------------------------
-# Below is a draft of the class made by Gemini provided
-# By Lucca, kill yourself lucca
-
-#ADDITION NEEDED!!!!!!!
-
-# Import the Book class from the obj_classes module
-class LibraryManager:
-    """Manages the collection of books in the library."""
-
-    def __init__(self):
-        """Initializes the LibraryManager with an empty collection."""
-        # Use a dictionary to store books, with ISBN as the key
-        self.books = {} # Dictionary to hold Book objects {isbn: Book_object}
-
-    def add_book(self, book):
-        """Adds a Book object to the library collection."""
-        if not isinstance(book, Book):
-            print("Error: Only Book objects can be added to the library.")
+    def borrow_book(self, user_id, isbn):
+        #allows user to borrow a book by isbn if available
+        user = self.find_user_by_id(user_id)
+        if not user:
+            print(f"Error: User with ID '{user_id}' not found")
             return False
 
-        if book.isbn in self.books:
-            # If the book already exists, maybe update total copies?
-            # Or raise an error? Let's print a warning for now.
-            print(f"Warning: Book with ISBN {book.isbn} already exists. Not adding again.")
-            # If you wanted to add copies, you'd need a method for that
-            # self.books[book.isbn].total_copies += book.total_copies
-            # self.books[book.isbn].available_copies += book.total_copies
-            return False
-        else:
-            self.books[book.isbn] = book
-            print(f"Added book: '{book.title}' (ISBN: {book.isbn})")
-            return True
-
-    def find_book(self, isbn):
-        """Finds and returns a Book object by its ISBN."""
-        return self.books.get(isbn) # .get() returns None if key not found
-
-    def borrow_book(self, isbn):
-        """Finds a book by ISBN and attempts to borrow a copy."""
-        book = self.find_book(isbn)
-        if book:
-            # Call the borrow_copy method of the found Book object
-            if book.borrow_copy():
-                print(f"Successfully borrowed one copy of '{book.title}'.")
-                return True
-            else:
-                # borrow_copy already prints an error message
-                return False
-        else:
-            print(f"Error: Book with ISBN {isbn} not found in the library.")
+        book = self.find_book_by_isbn(isbn)
+        if not book:
+            print(f"Error: Book with ISBN '{isbn}' not found")
             return False
 
-    def return_book(self, isbn):
-        """Finds a book by ISBN and attempts to return a copy."""
-        book = self.find_book(isbn)
-        if book:
-            # Call the return_copy method of the found Book object
-            if book.return_copy():
-                 print(f"Successfully returned one copy of '{book.title}'.")
-                 return True
-            else:
-                 # return_copy already prints a warning
-                 return False
-        else:
-            print(f"Error: Book with ISBN {isbn} not found in the library.")
+        if book.available_copies <= 0:
+            print (f"Error: No available copies of '{book.title}' (ISBN: {isbn}) to borrow")
             return False
 
-    def list_all_books(self):
-        """Prints details of all books in the library."""
-        if not self.books:
-            print("The library is currently empty.")
-            return
+        book.available_copies -= 1 #decreasing the count of available copies
 
-        print("\n--- Library Collection ---")
-        for isbn, book in self.books.items():
-            # Use the __str__ method of the Book object
-            print(book)
-            print("-" * 20)
-        print("--------------------------")
+        if user_id not in self.book_users:
+            self.book_users[user_id] = []
+        self.book_users[user_id].append(isbn)
 
-    def search_books(self, query):
-        """Searches for books by title or author (case-insensitive)."""
-        found_books = []
-        query_lower = query.lower()
+        if isbn not in self.book_users:
+            self.book_users[isbn] = []
+        self.book_users[isbn].append(user_id)
 
-        for book in self.books.values():
-            if query_lower in book.title.lower() or query_lower in book.author.lower():
-                found_books.append(book)
+        print(f"Book '{book.title}' (ISBN: {book.isbn}) successfully borrowed by User '{user.username}' (ID: {user.id})")
+        return True #borrowing successful
 
-        if found_books:
-            print(f"\n--- Search Results for '{query}' ---")
-            for book in found_books:
-                print(book)
-                print("-" * 20)
-            print("----------------------------")
-        else:
-            print(f"No books found matching '{query}'.")
+    def return_book(self, user_id, isbn):
+        #allows user to return books by isbn
+        user = self.find_user_by_id(user_id)
+        if not user:
+            print(f"Error: User with ID '{user_id}' not found")
+            return False
 
+        book = self.find_book_by_isbn(isbn)
+        if not book:
+            print(f"Error: Book with ISBN '{isbn}' not found")
+            return False
 
-# Example Usage (Optional - for testing LibraryManager in isolation)
-if __name__ == '__main__':
-    manager = LibraryManager()
+        if user_id not in self.book_users or isbn not in self.book_users[user_id]:
+            print (f"Error: User '{user.name} (ID: {user.id}) did not borrow the book '{book.title}' (ISBN: {isbn})")
+            return False
 
-    # Create some Book objects
-    try:
-        book1 = Book("978-0321765723", "The Lord of the Rings", "J.R.R. Tolkien", "Fantasy", 5)
-        book2 = Book("978-0743273565", "The Great Gatsby", "F. Scott Fitzgerald", "Classic", 3)
-        book3 = Book("978-1984801825", "Where the Crawdads Sing", "Delia Owens", "Mystery", 8)
+        book.available_copies += 1 #increase available copis
 
-        # Add books to the manager
-        manager.add_book(book1)
-        manager.add_book(book2)
-        manager.add_book(book3)
+        self.book_users[user_id].remove(isbn)
+        if not self.book_users[user_id]:
+            del self.book_users[user_id]
 
-        manager.list_all_books()
+        self.book_users[isbn].remove(user_id)
 
-        # Test borrowing
-        manager.borrow_book("978-0321765723") # Borrow LOTR
-        manager.borrow_book("978-0321765723") # Borrow LOTR again
-        manager.borrow_book("978-9999999999") # Try borrowing a non-existent book
+        if not self.book_users[isbn]:
+            del self.book_users[isbn]
 
-        print("\n--- After Borrowing ---")
-        manager.list_all_books()
+        print (f"Book '{book.title}' (ISBN: {isbn}) successfully returned by User '{user.username}' (ID: {user.id})")
+        return True
 
-        # Test returning
-        manager.return_book("978-0321765723") # Return LOTR
-        manager.return_book("978-9999999999") # Try returning non-existent
-
-        print("\n--- After Returning ---")
-        manager.list_all_books()
-
-        # Test searching
-        manager.search_books("Gatsby")
-        manager.search_books("Tolkien")
-        manager.search_books("Nonexistent Book")
-
-    except ValueError as e:
-        print(f"Error creating book: {e}")

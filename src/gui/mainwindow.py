@@ -37,5 +37,3 @@ register_label.pack(pady=10)
 register_label.bind("<Button-1>", lambda e: open_register())
 
 root.mainloop()
-
-
