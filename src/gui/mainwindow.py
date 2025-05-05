@@ -1,6 +1,26 @@
 import tkinter as tk
 from tkinter import messagebox
+from src.logic.LibraryManager import LibraryManager
 
+class MainWindow(tk.Tk, LibraryManager):
+    def __init__(self):
+        super().__init__()
+        self.title("Library Management System")
+        self.geometry("700x400")
+        self.configure(bg="#f0f0f0")
+
+        self.grid_rowconfigure(0, weight=1)
+        self.grid_rowconfigure(1, weight=3)
+        self.grid_rowconfigure(2, weight=1)
+        self.grid_columnconfigure(0, weight=2)
+        self.grid_columnconfigure(1, weight=3)
+
+
+
+        libMan = LibraryManager()
+
+
+"""
 def login():
     user_id = user_id_entry.get()
     if user_id.strip():
@@ -37,3 +57,4 @@ register_label.pack(pady=10)
 register_label.bind("<Button-1>", lambda e: open_register())
 
 root.mainloop()
+"""
