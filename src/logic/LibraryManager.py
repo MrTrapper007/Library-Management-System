@@ -108,6 +108,17 @@ class LibraryManager:
         print(f"Added user: '{user.name}' (ID: {user.user_id})")
         return True
 
+    def del_user(self, user):
+        if user.user_id in self.users:
+            self._user_to_isbn_map.pop(user.user_id, None)
+            del self.users[user.user_id]
+            print(f"Removed user: '{user.name}' (ID: {user.user_id})")
+            return True
+        else :
+            print(f"Error: User with ID '{user.user_id}' not found")
+            return False
+
+
     def find_user_by_id(self, user_id):
         #finds user by their ID
         return self.users.get(user_id)
@@ -256,6 +267,11 @@ if __name__ == "__main__":
     manager.add_user(user3)
     print("Attempting to add user1 again:")
     manager.add_user(user1) # Should print error
+
+    print("Deleting user1")
+    manager.del_user(user1)
+    print("Attempting to delete user1 again:")
+    manager.del_user(user1)
 
     print("\nListing all users:")
     manager.list_all_users()
