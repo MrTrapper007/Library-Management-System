@@ -31,6 +31,10 @@ class Book:
                 f"Genre: {self.genre} \n"
                 f"Copies Available: {self.available_copies} / {self.total_copies}")
 
+    def __repr__(self):
+        return (f"Book(isbn='{self.isbn}', title='{self.title}', "
+                f"Available={self.available_copies}, total={self.total_copies})")
+
 
 
 

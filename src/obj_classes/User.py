@@ -11,5 +11,5 @@ class User:
         self.user_id = user_id
         self.name = name
 
-    def get_user_info(self, user_id):
-        return self.users.get(user_id, "user not found.")
+    def __repr__(self):
+        return f"User (name= '{self.name}', user_id= {self.user_id})"
