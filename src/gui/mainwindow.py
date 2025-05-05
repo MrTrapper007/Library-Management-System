@@ -10,14 +10,26 @@ class MainWindow(tk.Tk, LibraryManager):
         self.configure(bg="#f0f0f0")
 
         self.grid_rowconfigure(0, weight=1)
-        self.grid_rowconfigure(1, weight=3)
+        self.grid_rowconfigure(1, weight=1)
         self.grid_rowconfigure(2, weight=1)
-        self.grid_columnconfigure(0, weight=2)
-        self.grid_columnconfigure(1, weight=3)
-
-
+        self.grid_rowconfigure(3, weight=1)
+        self.grid_rowconfigure(4, weight=1)
+        self.grid_columnconfigure(0, weight=1)
+        self.grid_columnconfigure(1, weight=5)
 
         libMan = LibraryManager()
+
+        self.managebooks = tk.Button(self, text="Manage Books", command=self.switch_view("Books"))
+        self.manageusers = tk.Button(self, text="Manage Users", command=self.switch_view("Users"))
+        self.manageborrows = tk.Button(self, text="Borrow & Return", command=self.switch_view("Borrowing"))
+        self.managebooks.grid(row=1, column=0, sticky="nsew")
+        self.manageusers.grid(row=2, column=0, sticky="nsew")
+        self.manageborrows.grid(row=3, column=0, sticky="nsew")
+
+
+    def switch_view(self, view):
+        pass
+
 
 
 """
