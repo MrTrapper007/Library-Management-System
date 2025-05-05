@@ -19,9 +19,9 @@ class MainWindow(tk.Tk, LibraryManager):
 
         libMan = LibraryManager()
 
-        self.managebooks = tk.Button(self, text="Manage Books", command=self.switch_view("Books"))
-        self.manageusers = tk.Button(self, text="Manage Users", command=self.switch_view("Users"))
-        self.manageborrows = tk.Button(self, text="Borrow & Return", command=self.switch_view("Borrowing"))
+        self.managebooks = tk.Button(self, text="Manage Books", padx= "50px", command=self.switch_view("Books"), bg="#99c0ff", activebackground="#b3d0ff")
+        self.manageusers = tk.Button(self, text="Manage Users", command=self.switch_view("Users"), bg="#99c0ff", activebackground="#b3d0ff")
+        self.manageborrows = tk.Button(self, text="Borrow & Return", command=self.switch_view("Borrowing"), bg="#99c0ff", activebackground="#b3d0ff")
         self.managebooks.grid(row=1, column=0, sticky="nsew")
         self.manageusers.grid(row=2, column=0, sticky="nsew")
         self.manageborrows.grid(row=3, column=0, sticky="nsew")
