@@ -136,17 +136,17 @@ class LibraryManager:
 
     def find_book_by_name(self, book_name):
         #finds book by its name
-        found_book = None
+        found_books = None
         for book in self.books.values():
             if book.title.lower() == book_name.lower():
-                found_book = book
+                found_books = book
                 break  # stop searching after finding the first match
 
         #check if a book was found
-        if found_book is None:
+        if found_books is None:
             print(f"No book found with the title: {book_name}")
 
-        return found_book
+        return found_books
 
     def find_book_by_genre(self, genre):
         found_books = []
@@ -426,10 +426,9 @@ class LibraryManager:
           f"Available copies now: {book.available_copies}")
 
     def remove_from_waiting_list(self, user_id, isbn):
-
         #remove user from waiting list
 
-#--- Saving/Loading Methods ---
+
 
 #TEST CODE
 from src.obj_classes.User import User
