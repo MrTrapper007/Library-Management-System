@@ -61,6 +61,7 @@ class LibraryManager:
             print(f"Cleaned up borrowing records for removed ISBN '{isbn}'.")
 
         return True
+
 # Created by Lucca 04/05/25
 
     def find_book_by_isbn(self, isbn):
