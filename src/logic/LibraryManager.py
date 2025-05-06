@@ -398,7 +398,7 @@ class LibraryManager:
         if not book or not book.available_copies <= 0 or isbn not in self._waiting_lists or not self._waiting_lists[isbn]:
             return
 
-        user_id = self._waiting_lists[0]
+        user_id = self._waiting_lists[isbn][0]
         self._waiting_lists[isbn].pop(0)
 
         if not self._waiting_lists[isbn]:
@@ -426,207 +426,54 @@ class LibraryManager:
           f"Available copies now: {book.available_copies}")
 
     def remove_from_waiting_list(self, user_id, isbn):
-        #remove user from waiting list
+        #remove user from a specific waiting list of a book
+        user = self.find_user_by_id(user_id)
+        if not user:
+            print(f"Error: User with ID '{user_id}' not found")
+            return False
+
+        book = self.find_book_by_isbn(isbn)
+        book_title = f"'{book.title}'" if book else f"Book with ISBN {isbn}"
+
+        if isbn not in self._waiting_lists or user_id not in self._waiting_lists[isbn]:
+            print(f"Error: User '{user.name}' (ID: {user_id}) is not on the waiting list for {book_title}")
+            return False
+
+        #get position before removing
+        position = self._waiting_lists[isbn].index(user_id) + 1
+
+        #remove from waiting list
+        self._waiting_lists[isbn].remove(user_id)
+
+        if not self._waiting_lists[isbn]:
+            del self._waiting_lists[isbn]
+
+        print(
+            f"User '{user.name}' (ID: {user_id}) removed from waiting list for {book_title} (was position #{position})")
+        return True
+
+    def list_waiting_list(self, isbn):
+        #show the waiting list for specific book
+        book = self.find_book_by_isbn(isbn)
+        if not book:
+            print(f"Error: Book with ISBN '{isbn}' not found")
+            return
+
+        if isbn not in self._waiting_lists or not self._waiting_lists[isbn]:
+            print(f"No users are waiting for '{book.title}' (ISBN: {isbn})")
+            return
+
+        waiting_users = self._waiting_lists[isbn]
+        print(f"\n--- Waiting List for '{book.title}' (ISBN: {isbn}) ---")
+        print(f"Total waiting: {len(waiting_users)}")
+
+        for i, user_id in enumerate(waiting_users):
+            user = self.find_user_by_id(user_id)
+            if user:
+                print(f"{i + 1}. {user.name} (ID: {user.user_id})")
+            else:
+                print(f"{i + 1}. Unknown User (ID: {user_id})")
+
+        print("-----------------------------------")
 
 
-
-#TEST CODE
-from src.obj_classes.User import User
-from src.obj_classes.Book import Book
-if __name__ == "__main__":
-    print("--- Testing LibraryManager Class ---")
-
-    # 1. Initialize LibraryManager
-    manager = LibraryManager()
-    print("\n--- Initializing LibraryManager ---")
-    print("-" * 40)
-
-    # 2. Test User Management
-    print("\n--- Testing User Management ---")
-    user1 = User("Alice", "user001")
-    user2 = User("Bob", "user002")
-    user3 = User("Charlie", "user003") # User who won't borrow initially
-
-    print("Adding user1:")
-    manager.add_user(user1)
-    print("Adding user2:")
-    manager.add_user(user2)
-    print("Adding user3:")
-    manager.add_user(user3)
-    print("Attempting to add user1 again:")
-    manager.add_user(user1) # Should print error
-
-    print("Deleting user1")
-    manager.del_user(user1)
-    print("Attempting to delete user1 again:")
-    manager.del_user(user1)
-
-    print("\nListing all users:")
-    manager.list_all_users()
-
-    print("\nFinding user001:")
-    found_user = manager.find_user_by_id("user001")
-    print(f"Found user: {found_user}")
-    print("Finding non-existent user999:")
-    not_found_user = manager.find_user_by_id("user999")
-    print(f"Found user: {not_found_user}")
-    print("-" * 40)
-
-    # 3. Test Book Management
-    print("\n--- Testing Book Management ---")
-    book1 = Book("978-0321765723", "The Lord of the Rings", "J.R.R. Tolkien", "Fantasy", 3)
-    book2 = Book("978-0743273565", "The Great Gatsby", "F. Scott Fitzgerald", "Classic", 2)
-    book3 = Book("978-0439708180", "Harry Potter and the Sorcerer's Stone", "J.K. Rowling", "Fantasy", 1)
-
-
-    print("Adding book1:")
-    manager.add_book(book1)
-    print("Adding book2:")
-    manager.add_book(book2)
-    print("Adding book3:")
-    manager.add_book(book3)
-    print("Attempting to add another copy of book1:")
-    manager.add_book(Book("978-0321765723", "The Lord of the Rings", "J.R.R. Tolkien", "Fantasy", 1)) # Add another copy
-
-    print("\nListing all books:")
-    manager.list_all_books()
-
-    print("\nFinding book 978-0743273565:")
-    found_book = manager.find_book_by_isbn("978-0743273565")
-    print(f"Found book: {found_book}")
-    print("Finding non-existent book 999-9999999999:")
-    not_found_book = manager.find_book_by_isbn("999-9999999999")
-    print(f"Found book: {not_found_book}")
-    print("-" * 40)
-
-    # 4. Test Borrowing and Returning
-    print("\n--- Testing Borrowing and Returning ---")
-    print("Alice (user001) borrows LotR (978-0321765723):")
-    manager.borrow_book("user001", "978-0321765723")
-    print("Bob (user002) borrows Gatsby (978-0743273565):")
-    manager.borrow_book("user002", "978-0743273565")
-    print("Alice (user001) borrows Gatsby (978-0743273565):")
-    manager.borrow_book("user001", "978-0743273565") # Alice borrows the second copy
-
-    print("\nLibrary status after borrowing:")
-    manager.list_all_books()
-    manager.list_all_users()
-
-    print("\nAttempting Alice (user001) to borrow LotR again:")
-    manager.borrow_book("user001", "978-0321765723") # Should print error
-
-    print("\nAttempting non-existent user to borrow:")
-    manager.borrow_book("user999", "978-0321765723") # Should print error
-
-    print("\nAttempting user to borrow non-existent book:")
-    manager.borrow_book("user001", "999-9999999999") # Should print error
-
-    # Borrow the last copy of LotR to test borrowing unavailable
-    print("\nBorrowing the last copies of LotR:")
-    manager.borrow_book("user002", "978-0321765723") # Bob borrows 2nd copy
-    manager.borrow_book("user003", "978-0321765723") # Charlie borrows 3rd copy
-    print("\nAttempting to borrow LotR when none available:")
-    manager.borrow_book("user001", "978-0321765723") # Should print error
-
-    print("\nLibrary status after borrowing all copies of LotR:")
-    manager.list_all_books()
-    manager.list_all_users()
-
-
-    print("\n--- Testing Returning ---")
-    print("Alice (user001) returns LotR (978-0321765723):")
-    manager.return_book("user001", "978-0321765723")
-    print("Bob (user002) returns Gatsby (978-0743273565):")
-    manager.return_book("user002", "978-0743273565")
-    print("Alice (user001) returns Gatsby (978-0743273565):")
-    manager.return_book("user001", "978-0743273565")
-
-    print("\nLibrary status after returning some books:")
-    manager.list_all_books()
-    manager.list_all_users()
-
-    print("\nAttempting Alice (user001) to return LotR again:")
-    manager.return_book("user001", "978-0321765723") # Should print error
-
-    print("\nAttempting user who didn't borrow to return:")
-    manager.return_book("user002", "978-0321765723") # Bob didn't borrow the copy Alice had
-    print("\nAttempting non-existent user to return:")
-    manager.return_book("user999", "978-0321765723") # Should print error
-
-    print("\nAttempting user to return non-existent book:")
-    manager.return_book("user001", "999-9999999999") # Should print error
-
-    print("\nBob (user002) returns LotR (978-0321765723):")
-    manager.return_book("user002", "978-0321765723") # Bob returns his copy
-    print("\nCharlie (user003) returns LotR (978-0321765723):")
-    manager.return_book("user003", "978-0321765723") # Charlie returns his copy
-
-
-    print("\nLibrary status after all borrowed books are returned:")
-    manager.list_all_books()
-    manager.list_all_users()
-    print("-" * 40)
-
-    # 5. Test Removing Books
-    print("\n--- Testing Removing Books ---")
-    print("Removing one copy of LotR (978-0321765723):")
-    manager.remove_book("978-0321765723")
-    print("\nRemoving the last copy of LotR (978-0321765723):")
-    manager.remove_book("978-0321765723") # Removes the last copy
-
-    print("\nLibrary status after removing LotR:")
-    manager.list_all_books()
-
-    print("\nAttempting to remove LotR again (already removed):")
-    manager.remove_book("978-0321765723") # Should print error
-
-    print("\nAttempting to remove non-existent book:")
-    manager.remove_book("999-9999999999") # Should print error
-
-    # Borrow Gatsby to test removing a book with no available copies
-    print("\nBorrowing Gatsby (978-0743273565) to test removing unavailable:")
-    manager.borrow_book("user001", "978-0743273565") # Alice borrows Gatsby (1 copy left)
-    manager.borrow_book("user002", "978-0743273565") # Bob borrows Gatsby (0 copies left)
-    print("\nAttempting to remove Gatsby when none available:")
-    manager.remove_book("978-0743273565") # Should print error
-
-    print("\nAlice returns Gatsby:")
-    manager.return_book("user001", "978-0743273565") # Alice returns Gatsby (1 copy available)
-    print("\nRemoving one copy of Gatsby (now available):")
-    manager.remove_book("978-0743273565") # Removes one copy
-
-    print("\nLibrary status after removing one Gatsby:")
-    manager.list_all_books()
-
-    print("\nRemoving the last copy of Gatsby:")
-    manager.remove_book("978-0743273565") # Removes the last copy
-
-    print("\nLibrary status after removing Gatsby:")
-    manager.list_all_books()
-    print("-" * 40)
-
-    print("\n--- Testing Saving and Loading User Data ---")
-    save_filename = "test_users.json"
-
-    # Add users again for test
-    userA = User("TestUserA", "test001")
-    userB = User("TestUserB", "test002")
-    manager.add_user(userA)
-    manager.add_user(userB)
-
-    print("Saving user data...")
-    manager.save_user_data(save_filename)
-
-    print("Clearing current users...")
-    manager.users.clear()
-    manager.list_all_users()  # should show no users
-
-    print("Loading user data...")
-    manager.load_user_data(save_filename)
-
-    print("Listing loaded users...")
-    manager.list_all_users()
-
-    print("\n--- Save/Load Testing Completed ---")
-
-    print("\n--- LibraryManager Class Tests Finished ---")
