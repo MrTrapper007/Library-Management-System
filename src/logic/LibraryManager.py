@@ -1,6 +1,7 @@
 # Created 03/05/25 by Riad
 from src.obj_classes.Book import Book
 from src.obj_classes.User import User
+import json
 
 class LibraryManager:
     def __init__(self):
@@ -71,6 +72,52 @@ class LibraryManager:
             print(f"Removed {len(waiting_users)} users from the waiting list for deleted book {title_for_print}.")
 
         return True
+
+        # --- Saving/Loading books and users functions ---
+
+        # This is a function to save user data to a json file.
+    def save_user_data(self, filename):
+        user_data = []
+        for user in self.users:
+            # Check if the user is actually a User object
+            if not hasattr(user, 'name') or not hasattr(user, 'user_id') or not hasattr(user, 'borrowed_books'):
+                print(f"Warning: Invalid user object found: {user}")
+                continue
+
+            user_dict = {
+                "name": user.name,
+                "user_id": user.user_id,
+                "borrowed_books": [book.isbn for book in user.borrowed_books]
+            }
+            user_data.append(user_dict)
+
+        try:
+            with open(filename, 'w') as f:
+                json.dump(user_data, f, indent=4)
+            print(f"User data successfully saved to {filename}")
+        except Exception as e:
+            print(f"Error saving user data: {str(e)}")
+
+    # This is a function to load user data from a json file.
+    def load_user_data(self, filename):
+
+        try:
+            with open(filename, 'r') as f:
+                user_data = json.load(f)
+
+            for user_dict in user_data:
+                user = User(user_dict['name'], user_dict['user_id'])
+                # Restore borrowed books if they exist in the library
+                for isbn in user_dict['borrowed_books']:
+                    book = self.find_book_by_isbn(isbn)
+                    if book:
+                        user.borrowed_books.append(book)
+                self.users.append(user)
+            print(f"User data successfully loaded from {filename}")
+        except FileNotFoundError:
+            print(f"File {filename} not found")
+        except Exception as e:
+            print(f"Error loading user data: {str(e)}")
 
 # Created by Lucca 04/05/25
 
@@ -379,9 +426,10 @@ class LibraryManager:
           f"Available copies now: {book.available_copies}")
 
     def remove_from_waiting_list(self, user_id, isbn):
+
         #remove user from waiting list
 
-
+#--- Saving/Loading Methods ---
 
 #TEST CODE
 from src.obj_classes.User import User
@@ -557,5 +605,29 @@ if __name__ == "__main__":
     print("\nLibrary status after removing Gatsby:")
     manager.list_all_books()
     print("-" * 40)
+
+    print("\n--- Testing Saving and Loading User Data ---")
+    save_filename = "test_users.json"
+
+    # Add users again for test
+    userA = User("TestUserA", "test001")
+    userB = User("TestUserB", "test002")
+    manager.add_user(userA)
+    manager.add_user(userB)
+
+    print("Saving user data...")
+    manager.save_user_data(save_filename)
+
+    print("Clearing current users...")
+    manager.users.clear()
+    manager.list_all_users()  # should show no users
+
+    print("Loading user data...")
+    manager.load_user_data(save_filename)
+
+    print("Listing loaded users...")
+    manager.list_all_users()
+
+    print("\n--- Save/Load Testing Completed ---")
 
     print("\n--- LibraryManager Class Tests Finished ---")
