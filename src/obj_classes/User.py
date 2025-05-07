@@ -10,6 +10,7 @@ class User:
 
         self.user_id = user_id
         self.name = name
+        self.borrowed_books = []
 
     def __repr__(self):
         return f"User (name= '{self.name}', user_id= {self.user_id})"

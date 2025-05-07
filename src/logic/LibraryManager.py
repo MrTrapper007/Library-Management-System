@@ -75,50 +75,6 @@ class LibraryManager:
 
         # --- Saving/Loading books and users functions ---
 
-        # This is a function to save user data to a json file.
-    def save_user_data(self, filename):
-        user_data = []
-        for user in self.users:
-            # Check if the user is actually a User object
-            if not hasattr(user, 'name') or not hasattr(user, 'user_id') or not hasattr(user, 'borrowed_books'):
-                print(f"Warning: Invalid user object found: {user}")
-                continue
-
-            user_dict = {
-                "name": user.name,
-                "user_id": user.user_id,
-                "borrowed_books": [book.isbn for book in user.borrowed_books]
-            }
-            user_data.append(user_dict)
-
-        try:
-            with open(filename, 'w') as f:
-                json.dump(user_data, f, indent=4)
-            print(f"User data successfully saved to {filename}")
-        except Exception as e:
-            print(f"Error saving user data: {str(e)}")
-
-    # This is a function to load user data from a json file.
-    def load_user_data(self, filename):
-
-        try:
-            with open(filename, 'r') as f:
-                user_data = json.load(f)
-
-            for user_dict in user_data:
-                user = User(user_dict['name'], user_dict['user_id'])
-                # Restore borrowed books if they exist in the library
-                for isbn in user_dict['borrowed_books']:
-                    book = self.find_book_by_isbn(isbn)
-                    if book:
-                        user.borrowed_books.append(book)
-                self.users.append(user)
-            print(f"User data successfully loaded from {filename}")
-        except FileNotFoundError:
-            print(f"File {filename} not found")
-        except Exception as e:
-            print(f"Error loading user data: {str(e)}")
-
 # Created by Lucca 04/05/25
 
     def find_books_by_author(self, author):
@@ -284,6 +240,82 @@ class LibraryManager:
 
             print ("-" * 30)
 
+    def save_user_data(self, filename):
+        data = {}
+        for user_id, user in self.users.items():
+            # Get borrowed books ISBNs for this user
+            borrowed_books = []
+            if user_id in self._user_to_isbn_map:
+                for isbn in self._user_to_isbn_map[user_id]:
+                    book = self.find_book_by_isbn(isbn)
+                    if book:
+                        borrowed_books.append({
+                            'isbn': isbn,
+                            'title': book.title,
+                            'author': book.author
+                        })
+
+            # Save user data
+            data[user_id] = {
+                'name': user.name,
+                'user_id': user.user_id,
+                'borrowed_books': borrowed_books
+            }
+
+        # Save waiting lists
+        waiting_lists_data = {}
+        for isbn, waiting_users in self._waiting_lists.items():
+            waiting_lists_data[isbn] = waiting_users
+
+        # Add waiting lists to the data
+        data['_waiting_lists'] = waiting_lists_data
+
+        # Save to file
+        with open(filename, 'w') as f:
+            json.dump(data, f, indent=4)
+
+    def load_user_data(self, filename):
+        if not os.path.exists(filename):
+            raise FileNotFoundError(f"File {filename} not found")
+
+        with open(filename, 'r') as f:
+            data = json.load(f)
+
+        # Clear existing data
+        self.users.clear()
+        self._user_to_isbn_map.clear()
+        self._isbn_to_user_map.clear()
+        self._waiting_lists.clear()
+
+        # Load waiting lists if present
+        if '_waiting_lists' in data:
+            self._waiting_lists = data['_waiting_lists']
+            del data['_waiting_lists']
+
+        # Load users and their data
+        for user_id, user_data in data.items():
+            # Create and add user
+            user = User(user_data['name'], user_data['user_id'])
+            self.users[user_id] = user
+
+            # Process borrowed books
+            for book_data in user_data['borrowed_books']:
+                isbn = book_data['isbn']
+
+                # Update user to ISBN map
+                if user_id not in self._user_to_isbn_map:
+                    self._user_to_isbn_map[user_id] = []
+                self._user_to_isbn_map[user_id].append(isbn)
+
+                # Update ISBN to user map
+                if isbn not in self._isbn_to_user_map:
+                    self._isbn_to_user_map[isbn] = []
+                self._isbn_to_user_map[isbn].append(user_id)
+
+                # Add book to user's borrowed books if it exists in library
+                book = self.find_book_by_isbn(isbn)
+                if book:
+                    user.borrowed_books.append(book)
         print ("-----------------------------------")
 
 
@@ -477,3 +509,149 @@ class LibraryManager:
         print("-----------------------------------")
 
 
+import unittest
+import os
+import json
+from src.obj_classes.Book import Book
+from src.obj_classes.User import User
+from src.logic.LibraryManager import LibraryManager
+
+
+class TestLibraryManagerUserData(unittest.TestCase):
+    def setUp(self):
+        """Set up test fixtures before each test method."""
+        self.manager = LibraryManager()
+        self.test_filename = "test_user_data.json"
+
+        # Create test books
+        self.book1 = Book("123-4567890123", "Test Book 1", "Author 1", "Fiction", 2)
+        self.book2 = Book("456-7890123456", "Test Book 2", "Author 2", "Non-Fiction", 1)
+
+        # Create test users
+        self.user1 = User("John Doe", "user001")
+        self.user2 = User("Jane Smith", "user002")
+
+        # Add books to library
+        self.manager.add_book(self.book1)
+        self.manager.add_book(self.book2)
+
+        # Add users to library
+        self.manager.add_user(self.user1)
+        self.manager.add_user(self.user2)
+
+    def tearDown(self):
+        """Clean up after each test method."""
+        if os.path.exists(self.test_filename):
+            os.remove(self.test_filename)
+
+    def test_save_user_data_basic(self):
+        """Test basic user data saving functionality."""
+        self.manager.save_user_data(self.test_filename)
+        self.assertTrue(os.path.exists(self.test_filename))
+        self.assertGreater(os.path.getsize(self.test_filename), 0)
+
+    def test_save_user_data_with_borrowed_books(self):
+        """Test saving user data when users have borrowed books."""
+        # Set up borrowed books
+        self.manager.borrow_book("user001", "123-4567890123")
+        self.manager.borrow_book("user002", "456-7890123456")
+
+        self.manager.save_user_data(self.test_filename)
+
+        # Verify saved data
+        with open(self.test_filename, 'r') as f:
+            data = json.load(f)
+            self.assertTrue("user001" in data)
+            self.assertTrue("borrowed_books" in data["user001"])
+            self.assertEqual(len(data["user001"]["borrowed_books"]), 1)
+
+    def test_load_user_data_basic(self):
+        """Test basic user data loading functionality."""
+        # Save data first
+        self.manager.save_user_data(self.test_filename)
+
+        # Clear manager and reload
+        self.manager.users.clear()
+        self.assertEqual(len(self.manager.users), 0)
+
+        # Load data
+        self.manager.load_user_data(self.test_filename)
+        self.assertEqual(len(self.manager.users), 2)
+        self.assertTrue("user001" in self.manager.users)
+        self.assertTrue("user002" in self.manager.users)
+
+    def test_load_user_data_with_borrowed_books(self):
+        """Test loading user data with borrowe[d books."""
+        # Set up borrowed books and save
+        self.manager.borrow_book("user001", "123-4567890123")
+        self.manager.save_user_data(self.test_filename)
+
+        # Clear and reload
+        self.manager.users.clear()
+        self.manager.load_user_data(self.test_filename)
+
+        # Verify loaded data
+        loaded_user = self.manager.users["user001"]
+        self.assertEqual(len(loaded_user.borrowed_books), 1)
+        self.assertEqual(loaded_user.borrowed_books[0].isbn, "123-4567890123")
+
+    def test_save_load_with_waiting_list(self):
+        """Test saving and loading data with users in waiting lists."""
+        # Set up waiting list scenario
+        self.manager.borrow_book("user001", "456-7890123456")  # Borrow the only copy
+        self.manager.borrow_book("user002", "456-7890123456")  # This should add to waiting list
+
+        self.manager.save_user_data(self.test_filename)
+
+        # Clear and reload
+        self.manager.users.clear()
+        self.manager.load_user_data(self.test_filename)
+
+        # Verify waiting list is preserved
+        self.assertTrue("456-7890123456" in self.manager._waiting_lists)
+        self.assertIn("user002", self.manager._waiting_lists["456-7890123456"])
+
+    def test_load_nonexistent_file(self):
+        """Test loading from a non-existent file."""
+        with self.assertRaises(FileNotFoundError):
+            self.manager.load_user_data("nonexistent_file.json")
+
+    def test_save_load_empty_library(self):
+        """Test saving and loading with no users in library."""
+        empty_manager = LibraryManager()
+        empty_manager.users.clear()
+        empty_manager._user_to_isbn_map.clear()
+        empty_manager._isbn_to_user_map.clear()
+        empty_manager._waiting_lists.clear()
+        empty_manager.save_user_data(self.test_filename)
+
+        # Verify saved file contains empty data
+        with open(self.test_filename, 'r') as f:
+            data = json.load(f)
+            self.assertEqual(len(data), 0)
+
+    def test_data_integrity_after_load(self):
+        """Test that all user relationships are properly maintained after loading."""
+        # Set up complex borrowing scenario
+        self.manager.borrow_book("user001", "123-4567890123")
+        self.manager.borrow_book("user002", "456-7890123456")
+
+        self.manager.save_user_data(self.test_filename)
+
+        # Clear and reload
+        original_user_to_isbn = self.manager._user_to_isbn_map.copy()
+        original_isbn_to_user = self.manager._isbn_to_user_map.copy()
+
+        self.manager.users.clear()
+        self.manager._user_to_isbn_map.clear()
+        self.manager._isbn_to_user_map.clear()
+
+        self.manager.load_user_data(self.test_filename)
+
+        # Verify relationships are maintained
+        self.assertEqual(self.manager._user_to_isbn_map, original_user_to_isbn)
+        self.assertEqual(self.manager._isbn_to_user_map, original_isbn_to_user)
+
+
+if __name__ == '__main__':
+    unittest.main()
