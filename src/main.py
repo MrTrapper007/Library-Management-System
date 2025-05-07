@@ -1,4 +1,5 @@
 from src.gui.mainwindow import MainWindow
-
-app = MainWindow()
+from src.logic.LibraryManager import LibraryManager
+libMan = LibraryManager()
+app = MainWindow(libMan)
 app.mainloop()
