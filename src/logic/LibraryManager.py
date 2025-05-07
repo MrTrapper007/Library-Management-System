@@ -135,17 +135,20 @@ class LibraryManager:
 
     def list_all_books(self):
         # prints all the books in the library
+        # Riad: i will make it return a list twin :3
+        booklist = []
         if not self.books:
             print("No books found")
-            return
+            return booklist
 
         print ("\n--- Library Book Collection ---")
 
         sorted_books = sorted(self.books.values(), key=lambda b: b.title)
 
         for book in sorted_books:
-            # print book details
+            # print (and add to list) book details
             print (book)
+            booklist.append(book)
 
             borrowing_user_ids = self._isbn_to_user_map.get(book.isbn, [])
 
@@ -170,6 +173,7 @@ class LibraryManager:
             print("-" * 30) #separator line
 
         print ("----------------------------------") # final separator line
+        return booklist
 
 # --- User management system ---
 
