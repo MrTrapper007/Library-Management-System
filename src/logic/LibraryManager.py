@@ -1,6 +1,7 @@
 # Created 03/05/25 by Riad
 from src.obj_classes.Book import Book
 from src.obj_classes.User import User
+from datetime import datetime, timedelta
 import json
 
 class LibraryManager:
@@ -13,6 +14,7 @@ class LibraryManager:
         self._isbn_to_user_map = {} #list of users who borrowed this book
 
         self._waiting_lists = {} #waiting list for the books that are completely borrowed
+        self._borrowing_records = {}
 
 # --- Book management system ---
 
@@ -360,6 +362,16 @@ class LibraryManager:
 
         book.available_copies -= 1 #decreasing the count of available copies
 
+        due_date = datetime.now() + timedelta(days=14)
+
+        record_key = f"{user_id}_{isbn}"
+        self._borrowing_records[record_key] = {
+            'user_id': user_id,
+            'isbn': isbn,
+            'borrowed_date': datetime.now(),
+            'due_date': due_date
+        }
+
         if user_id not in self._user_to_isbn_map:
             self._user_to_isbn_map[user_id] = []
         self._user_to_isbn_map[user_id].append(isbn)
@@ -370,6 +382,7 @@ class LibraryManager:
 
         print(f"Book '{book.title}' (ISBN: {book.isbn}) successfully borrowed by User '{user.name}' (ID: {user_id})."
               f"Available copies now: {book.available_copies}")
+        print(f"Due date: {due_date.strftime('%Y-%m-%d')}")
         return True #borrowing successful
 
     def return_book(self, user_id, isbn):
@@ -383,6 +396,18 @@ class LibraryManager:
         if not book:
             print(f"Error: Book with ISBN '{isbn}' not found")
             return False
+
+        record_key = f"{user_id}_{isbn}"
+        if record_key in self._borrowing_records:
+            record = self._borrowing_records[record_key]
+            due_date = record['due_date']
+            today = datetime.now()
+
+            if today > due_date:
+                days_late = (today - due_date).days
+                print(
+                    f"LATE RETURN: This book was due on {due_date.strftime('%Y-%m-%d')} and is {days_late} days late.")
+            del self._borrowing_records[record_key]
 
         if user_id not in self._user_to_isbn_map or isbn not in self._user_to_isbn_map.get(user_id, []):
             book.title = f"'{book.title}'" if book else "Book"
@@ -444,6 +469,17 @@ class LibraryManager:
             return
 
         book.available_copies -= 1 #automatically assigns book for the first person in the waiting list
+
+        due_date = datetime.now() + timedelta(days=14)
+
+        record_key = f"{user_id}_{isbn}"
+        self._borrowing_records[record_key] = {
+            'user_id': user_id,
+            'isbn': isbn,
+            'borrowed_date': datetime.now(),
+            'due_date': due_date
+        }
+        print(f"Due date: {due_date.strftime('%Y-%m-%d')}")
 
         if user_id not in self._user_to_isbn_map:
             self._user_to_isbn_map[user_id] = []
@@ -507,6 +543,58 @@ class LibraryManager:
                 print(f"{i + 1}. Unknown User (ID: {user_id})")
 
         print("-----------------------------------")
+
+    def list_overdue_books(self):
+
+        if not self._borrowing_records:
+            print("No borrowing records found or no books are currently borrowed.")
+            return []
+
+        today = datetime.now()
+        overdue_entries = []
+
+        print("\n--- Overdue Books ---")
+        print("The following users have books past their due date:")
+
+        sorted_records = []
+        for record_key, record in self._borrowing_records.items():
+            due_date = record['due_date']
+            if today > due_date:
+                days_overdue = (today - due_date).days
+                user_id = record['user_id']
+                isbn = record['isbn']
+                sorted_records.append((days_overdue, user_id, isbn, due_date))
+
+        sorted_records.sort(reverse=True)
+
+        if not sorted_records:
+            print("No overdue books found.")
+            return []
+
+        for days_overdue, user_id, isbn, due_date in sorted_records:
+            user = self.find_user_by_id(user_id)
+            book = self.find_book_by_isbn(isbn)
+
+            if user and book:
+                print(f"{user.name} (ID: {user_id}) - '{book.title}' by {book.author}")
+                print(f"  ISBN: {isbn}")
+                print(f"  Due Date: {due_date.strftime('%Y-%m-%d')}")
+                print(f"  Days Overdue: {days_overdue}")
+                print("-" * 30)
+
+                overdue_entries.append({
+                    'user_id': user_id,
+                    'user_name': user.name,
+                    'isbn': isbn,
+                    'title': book.title,
+                    'due_date': due_date,
+                    'days_overdue': days_overdue
+                })
+
+        print(f"Total overdue books: {len(sorted_records)}")
+        print("-----------------------------------")
+
+        return overdue_entries
 
 
 import unittest
@@ -581,7 +669,7 @@ class TestLibraryManagerUserData(unittest.TestCase):
         self.assertTrue("user002" in self.manager.users)
 
     def test_load_user_data_with_borrowed_books(self):
-        """Test loading user data with borrowe[d books."""
+        """Test loading user data with borrowed books."""
         # Set up borrowed books and save
         self.manager.borrow_book("user001", "123-4567890123")
         self.manager.save_user_data(self.test_filename)
