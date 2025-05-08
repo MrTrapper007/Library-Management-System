@@ -1,10 +1,13 @@
+
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import ttk
+from tkinter import messagebox, filedialog
+import os
 
 from src.gui.viewbooks import ViewBooks
 from src.gui.viewusers import ViewUsers
 from src.gui.borrowreturnview import BorrowReturnView
-from src.gui.saveload import SaveLoadView
+from src.logic.LibraryManager import LibraryManager
 
 
 class MainWindow(tk.Tk):
@@ -123,3 +126,47 @@ class MainWindow(tk.Tk):
         """Handle application exit"""
         if messagebox.askyesno("Exit", "Are you sure you want to exit?\nUnsaved changes will be lost."):
             self.destroy()
+
+
+class SaveLoadView(tk.Frame):
+    def __init__(self, parent, library_manager, status_bar):
+        super().__init__(parent)
+        self.library_manager = library_manager
+        self.status_bar = status_bar
+
+        # Create save section
+        save_frame = tk.LabelFrame(self, text="Save Library Data", padx=10, pady=5)
+        save_frame.pack(fill="x", padx=10, pady=5)
+
+        tk.Button(save_frame, text="Save Library Data",
+                  command=self.save_data).pack(pady=5)
+
+        # Create load section
+        load_frame = tk.LabelFrame(self, text="Load Library Data", padx=10, pady=5)
+        load_frame.pack(fill="x", padx=10, pady=5)
+
+        tk.Button(load_frame, text="Load Library Data",
+                  command=self.load_data).pack(pady=5)
+
+    def save_data(self):
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".json",
+            filetypes=[("JSON files", "*.json"), ("All files", "*.*")]
+        )
+        if file_path:
+            try:
+                self.library_manager.save_to_file(file_path)
+                self.status_bar.config(text=f"Data saved successfully to {file_path}")
+            except Exception as e:
+                self.status_bar.config(text=f"Error saving data: {str(e)}")
+
+    def load_data(self):
+        file_path = filedialog.askopenfilename(
+            filetypes=[("JSON files", "*.json"), ("All files", "*.*")]
+        )
+        if file_path:
+            try:
+                self.library_manager.load_from_file(file_path)
+                self.status_bar.config(text=f"Data loaded successfully from {file_path}")
+            except Exception as e:
+                self.status_bar.config(text=f"Error loading data: {str(e)}")
