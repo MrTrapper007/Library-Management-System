@@ -205,15 +205,18 @@ class LibraryManager:
 
     def list_all_users(self):
 
+        users_list = []
+
         if not self.users:
             print("No users registered in the system")
-            return
+            return users_list
 
         print ("\n--- Library Users ---")
         sorted_users = sorted(self.users.values(), key=lambda u: u.name)
 
         for user in sorted_users:
             print(f"ID: {user.user_id}, Name: {user.name}")
+            users_list.append(user)
 
             borrowed_isbns = self._user_to_isbn_map.get(user.user_id, [])
 
@@ -245,6 +248,7 @@ class LibraryManager:
                 print(f"  Waiting for: {', '.join(waiting_for)}")
 
             print ("-" * 30)
+        return users_list
 
     def save_user_data(self, filename):
         data = {}
