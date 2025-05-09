@@ -155,7 +155,7 @@ class SaveLoadView(tk.Frame):
         )
         if file_path:
             try:
-                self.library_manager.save_to_file(file_path)
+                self.library_manager.save_user_data(file_path)
                 self.status_bar.config(text=f"Data saved successfully to {file_path}")
             except Exception as e:
                 self.status_bar.config(text=f"Error saving data: {str(e)}")
@@ -166,7 +166,7 @@ class SaveLoadView(tk.Frame):
         )
         if file_path:
             try:
-                self.library_manager.load_from_file(file_path)
+                self.library_manager.load_user_data(file_path)
                 self.status_bar.config(text=f"Data loaded successfully from {file_path}")
             except Exception as e:
                 self.status_bar.config(text=f"Error loading data: {str(e)}")

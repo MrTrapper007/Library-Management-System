@@ -250,10 +250,24 @@ class LibraryManager:
             print ("-" * 30)
         return users_list
 
+    def save_book_data(self):
+        book_data = {}
+        for isbn, book in self.books.items():
+            book_data[isbn] = {
+                'isbn': book.isbn,
+                'title': book.title,
+                'author': book.author,
+                'genre': book.genre,
+                'total_copies': book.total_copies,
+                'available_copies': book.available_copies
+            }
+        return book_data
+
     def save_user_data(self, filename):
-        data = {}
+        data = {'users': {}, 'books': {}, '_waiting_lists': {}}
+
+        # Save user data
         for user_id, user in self.users.items():
-            # Get borrowed books ISBNs for this user
             borrowed_books = []
             if user_id in self._user_to_isbn_map:
                 for isbn in self._user_to_isbn_map[user_id]:
@@ -265,24 +279,24 @@ class LibraryManager:
                             'author': book.author
                         })
 
-            # Save user data
-            data[user_id] = {
+            data['users'][user_id] = {
                 'name': user.name,
                 'user_id': user.user_id,
                 'borrowed_books': borrowed_books
             }
 
-        # Save waiting lists
-        waiting_lists_data = {}
-        for isbn, waiting_users in self._waiting_lists.items():
-            waiting_lists_data[isbn] = waiting_users
+        # Save book data
+        data['books'] = self.save_book_data()
 
-        # Add waiting lists to the data
-        data['_waiting_lists'] = waiting_lists_data
+        # Save waiting lists
+        for isbn, waiting_users in self._waiting_lists.items():
+            data['_waiting_lists'][isbn] = waiting_users
 
         # Save to file
         with open(filename, 'w') as f:
             json.dump(data, f, indent=4)
+
+    import os
 
     def load_user_data(self, filename):
         if not os.path.exists(filename):
@@ -293,6 +307,7 @@ class LibraryManager:
 
         # Clear existing data
         self.users.clear()
+        self.books.clear()
         self._user_to_isbn_map.clear()
         self._isbn_to_user_map.clear()
         self._waiting_lists.clear()
@@ -300,36 +315,48 @@ class LibraryManager:
         # Load waiting lists if present
         if '_waiting_lists' in data:
             self._waiting_lists = data['_waiting_lists']
-            del data['_waiting_lists']
+
+        # Load books first
+        if 'books' in data:
+            for isbn, book_data in data['books'].items():
+                book = Book(
+                    isbn=book_data['isbn'],
+                    title=book_data['title'],
+                    author=book_data['author'],
+                    genre=book_data['genre'],
+                    total_copies=book_data['total_copies']
+                )
+                book.available_copies = book_data['available_copies']
+                self.books[isbn] = book
 
         # Load users and their data
-        for user_id, user_data in data.items():
-            # Create and add user
-            user = User(user_data['name'], user_data['user_id'])
-            self.users[user_id] = user
+        if 'users' in data:
+            for user_id, user_data in data['users'].items():
+                # Create and add user
+                user = User(user_data['name'], user_data['user_id'])
+                self.users[user_id] = user
 
-            # Process borrowed books
-            for book_data in user_data['borrowed_books']:
-                isbn = book_data['isbn']
+                # Process borrowed books
+                for book_data in user_data['borrowed_books']:
+                    isbn = book_data['isbn']
 
-                # Update user to ISBN map
-                if user_id not in self._user_to_isbn_map:
-                    self._user_to_isbn_map[user_id] = []
-                self._user_to_isbn_map[user_id].append(isbn)
+                    # Update user to ISBN map
+                    if user_id not in self._user_to_isbn_map:
+                        self._user_to_isbn_map[user_id] = []
+                    self._user_to_isbn_map[user_id].append(isbn)
 
-                # Update ISBN to user map
-                if isbn not in self._isbn_to_user_map:
-                    self._isbn_to_user_map[isbn] = []
-                self._isbn_to_user_map[isbn].append(user_id)
+                    # Update ISBN to user map
+                    if isbn not in self._isbn_to_user_map:
+                        self._isbn_to_user_map[isbn] = []
+                    self._isbn_to_user_map[isbn].append(user_id)
 
-                # Add book to user's borrowed books if it exists in library
-                book = self.find_book_by_isbn(isbn)
-                if book:
-                    user.borrowed_books.append(book)
-        print ("-----------------------------------")
+                    # Add book to user's borrowed books if it exists in library
+                    book = self.find_book_by_isbn(isbn)
+                    if book:
+                        user.borrowed_books.append(book)
+        print("-----------------------------------")
 
-
-# --- Borrowing and Returning Methods ---
+    # --- Borrowing and Returning Methods ---
 
     def borrow_book(self, user_id, isbn):
         #allows user to borrow a book by isbn if available
