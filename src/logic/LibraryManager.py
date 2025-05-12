@@ -5,19 +5,20 @@ import json
 from src.obj_classes.Book import Book
 from src.obj_classes.User import User
 
+
 class LibraryManager:
     def __init__(self):
         # initializing the manager (do ts inside main.py)
         self.books = {}
         self.users = {}
 
-        self._user_to_isbn_map = {} #list of isbns borrowed by user
-        self._isbn_to_user_map = {} #list of users who borrowed this book
+        self._user_to_isbn_map = {}  # list of isbns borrowed by user
+        self._isbn_to_user_map = {}  # list of users who borrowed this book
 
-        self._waiting_lists = {} #waiting list for the books that are completely borrowed
+        self._waiting_lists = {}  # waiting list for the books that are completely borrowed
         self._borrowing_records = {}
 
-# --- Book management system ---
+    # --- Book management system ---
 
     def add_book(self, book):
         # adding books to ur library
@@ -30,7 +31,7 @@ class LibraryManager:
 
             self._process_waiting_list(book.isbn)
         else:
-            #adds new book object
+            # adds new book object
             self.books[book.isbn] = book
             print(f"Added book: '{book.title}' (ISBN: {book.isbn}), "
                   f"Copies: {book.available_copies} / {book.total_copies}")
@@ -59,7 +60,7 @@ class LibraryManager:
                   f"Book record deleted.")
 
         if isbn in self._isbn_to_user_map:
-            borrowing_users = list(self._isbn_to_user_map[isbn]) #copying list before modifying it
+            borrowing_users = list(self._isbn_to_user_map[isbn])  # copying list before modifying it
             for user_id in borrowing_users:
                 if user_id in self._user_to_isbn_map and isbn in self._user_to_isbn_map[user_id]:
                     self._user_to_isbn_map[user_id].remove(isbn)
@@ -78,10 +79,10 @@ class LibraryManager:
 
         # --- Saving/Loading books and users functions ---
 
-# Created by Lucca 04/05/25
+    # Created by Lucca 04/05/25
 
     def find_books_by_author(self, author):
-        #finds all books written by specific author
+        # finds all books written by specific author
         found_books = []
         # iterate through all the book objects stored as values in the self.books dictionary
         for book in self.books.values():
@@ -91,17 +92,17 @@ class LibraryManager:
         if not found_books:
             print(f"No books found by author: {author}")
 
-        return found_books  #return the list of all books found for this author
+        return found_books  # return the list of all books found for this author
 
     def find_book_by_name(self, book_name):
-        #finds book by its name
+        # finds book by its name
         found_books = None
         for book in self.books.values():
             if book.title.lower() == book_name.lower():
                 found_books = book
                 break  # stop searching after finding the first match
 
-        #check if a book was found
+        # check if a book was found
         if found_books is None:
             print(f"No book found with the title: {book_name}")
 
@@ -110,8 +111,8 @@ class LibraryManager:
     def find_book_by_genre(self, genre):
         found_books = []
         for book in self.books.values():
-            #assuming book.genre is a string or list of strings
-            if hasattr(book, 'genre') and book.genre:  #check if genre attribute exists and its not empty
+            # assuming book.genre is a string or list of strings
+            if hasattr(book, 'genre') and book.genre:  # check if genre attribute exists and its not empty
                 if isinstance(book.genre, str):
                     if book.genre.lower() == genre.lower():
                         found_books.append(book)
@@ -119,16 +120,16 @@ class LibraryManager:
                     if genre.lower() in [g.lower() for g in book.genre]:
                         found_books.append(book)
 
-        #check if any books were found
+        # check if any books were found
         if not found_books:
             print(f"No books found in the genre: {genre}")
 
         return found_books
 
     def find_book_by_isbn(self, isbn):
-        #finds book by isbn
+        # finds book by isbn
         book = self.books.get(isbn)
-        #check if the book was found
+        # check if the book was found
         if book is None:
             print(f"No book found with ISBN: {isbn}")
 
@@ -142,13 +143,13 @@ class LibraryManager:
             print("No books found")
             return booklist
 
-        print ("\n--- Library Book Collection ---")
+        print("\n--- Library Book Collection ---")
 
         sorted_books = sorted(self.books.values(), key=lambda b: b.title)
 
         for book in sorted_books:
             # print (and add to list) book details
-            print (book)
+            print(book)
             booklist.append(book)
 
             borrowing_user_ids = self._isbn_to_user_map.get(book.isbn, [])
@@ -162,7 +163,7 @@ class LibraryManager:
             else:
                 print(f" Currently not borrowed.")
 
-            #waiting list information
+            # waiting list information
             waiting_users = self._waiting_lists.get(book.isbn, [])
             if waiting_users:
                 waiting_names = []
@@ -171,15 +172,15 @@ class LibraryManager:
                     waiting_names.append(f"{user.name}") if user else f"Unknown User (ID: {user_id})"
                 print(f"  Waiting list ({len(waiting_users)}): {', '.join(waiting_names)}")
 
-            print("-" * 30) #separator line
+            print("-" * 30)  # separator line
 
-        print ("----------------------------------") # final separator line
+        print("----------------------------------")  # final separator line
         return booklist
 
-# --- User management system ---
+    # --- User management system ---
 
     def add_user(self, user):
-        #adds new user to the system
+        # adds new user to the system
         if user.user_id in self.users:
             print(f"Error: User with ID '{user.user_id}' already exists")
             return False
@@ -189,19 +190,18 @@ class LibraryManager:
         return True
 
     def del_user(self, user):
-        #allows deletion of users from the app
+        # allows deletion of users from the app
         if user.user_id in self.users:
             self._user_to_isbn_map.pop(user.user_id, None)
             del self.users[user.user_id]
             print(f"Removed user: '{user.name}' (ID: {user.user_id})")
             return True
-        else :
+        else:
             print(f"Error: User with ID '{user.user_id}' not found")
             return False
 
-
     def find_user_by_id(self, user_id):
-        #finds user by their ID
+        # finds user by their ID
         return self.users.get(user_id)
 
     def list_all_users(self):
@@ -212,7 +212,7 @@ class LibraryManager:
             print("No users registered in the system")
             return users_list
 
-        print ("\n--- Library Users ---")
+        print("\n--- Library Users ---")
         sorted_users = sorted(self.users.values(), key=lambda u: u.name)
 
         for user in sorted_users:
@@ -222,7 +222,7 @@ class LibraryManager:
             borrowed_isbns = self._user_to_isbn_map.get(user.user_id, [])
 
             if borrowed_isbns:
-                #looks up titles for borrowed books
+                # looks up titles for borrowed books
                 borrowed_titles_info = []
                 for isbn in borrowed_isbns:
                     book = self.find_book_by_isbn(isbn)
@@ -230,11 +230,11 @@ class LibraryManager:
                         borrowed_titles_info.append(f"'{book.title}' (ISBN: {isbn})")
                     else:
                         borrowed_titles_info.append(f"Unknown Book (ISBN: {isbn})")
-                print (f"  Borrowed: {', '.join(borrowed_titles_info)}")
+                print(f"  Borrowed: {', '.join(borrowed_titles_info)}")
             else:
                 print(f" Currently not borrowed.")
 
-            #display books user is waiting for
+            # display books user is waiting for
             waiting_for = []
             for isbn, waiting_users in self._waiting_lists.items():
                 if user.user_id in waiting_users:
@@ -248,15 +248,21 @@ class LibraryManager:
             if waiting_for:
                 print(f"  Waiting for: {', '.join(waiting_for)}")
 
-            print ("-" * 30)
+            print("-" * 30)
         return users_list
 
     import os
 
     # --- Borrowing and Returning Methods ---
 
+    def is_book_borrowed_by_user(self, isbn, user_id):
+        """Check if a specific book is already borrowed by a specific user."""
+        if user_id in self._user_to_isbn_map and isbn in self._user_to_isbn_map[user_id]:
+            return True
+        return False
+
     def borrow_book(self, user_id, isbn):
-        #allows user to borrow a book by isbn if available
+        # allows user to borrow a book by isbn if available
         user = self.find_user_by_id(user_id)
         if not user:
             print(f"Error: User with ID '{user_id}' not found")
@@ -288,7 +294,7 @@ class LibraryManager:
                   f"User '{user.name}' (ID: {user_id}) added to waiting list (position #{position}).")
             return False
 
-        book.available_copies -= 1 #decreasing the count of available copies
+        book.available_copies -= 1  # decreasing the count of available copies
 
         record_key = f"{user_id}_{isbn}"
         self._borrowing_records[record_key] = {
@@ -306,10 +312,10 @@ class LibraryManager:
 
         print(f"Book '{book.title}' (ISBN: {book.isbn}) successfully borrowed by User '{user.name}' (ID: {user_id})."
               f"Available copies now: {book.available_copies}")
-        return True #borrowing successful
+        return True  # borrowing successful
 
     def return_book(self, user_id, isbn):
-        #allows user to return books by isbn
+        # allows user to return books by isbn
         user = self.find_user_by_id(user_id)
         if not user:
             print(f"Error: User with ID '{user_id}' not found")
@@ -330,7 +336,7 @@ class LibraryManager:
             return False
 
         if book:
-            book.available_copies += 1 #increase available copies if the book record still exists
+            book.available_copies += 1  # increase available copies if the book record still exists
         else:
             print(f"Warning: Can not increase available count for non-existent book record ISBN '{isbn}'.")
 
@@ -365,9 +371,10 @@ class LibraryManager:
         return True
 
     def _process_waiting_list(self, isbn):
-        #process the waiting list for when book becomes available
+        # process the waiting list for when book becomes available
         book = self.find_book_by_isbn(isbn)
-        if not book or not book.available_copies <= 0 or isbn not in self._waiting_lists or not self._waiting_lists[isbn]:
+        if not book or not book.available_copies <= 0 or isbn not in self._waiting_lists or not self._waiting_lists[
+            isbn]:
             return
 
         user_id = self._waiting_lists[isbn][0]
@@ -386,11 +393,11 @@ class LibraryManager:
         self.borrow_book(user_id, isbn)
 
         print(f"Automatic checkout: Book '{book.title}' (ISBN: {book.isbn}) is now available and has been "
-          f"borrowed by User '{user.name}' (ID: {user_id}) from the waiting list. "
-          f"Available copies now: {book.available_copies}")
+              f"borrowed by User '{user.name}' (ID: {user_id}) from the waiting list. "
+              f"Available copies now: {book.available_copies}")
 
     def remove_from_waiting_list(self, user_id, isbn):
-        #remove user from a specific waiting list of a book
+        # remove user from a specific waiting list of a book
         user = self.find_user_by_id(user_id)
         if not user:
             print(f"Error: User with ID '{user_id}' not found")
@@ -403,10 +410,10 @@ class LibraryManager:
             print(f"Error: User '{user.name}' (ID: {user_id}) is not on the waiting list for {book_title}")
             return False
 
-        #get position before removing
+        # get position before removing
         position = self._waiting_lists[isbn].index(user_id) + 1
 
-        #remove from waiting list
+        # remove from waiting list
         self._waiting_lists[isbn].remove(user_id)
 
         if not self._waiting_lists[isbn]:
@@ -417,7 +424,7 @@ class LibraryManager:
         return True
 
     def list_waiting_list(self, isbn):
-        #show the waiting list for specific book
+        # show the waiting list for specific book
         book = self.find_book_by_isbn(isbn)
         if not book:
             print(f"Error: Book with ISBN '{isbn}' not found")
@@ -440,12 +447,11 @@ class LibraryManager:
 
         print("-----------------------------------")
 
-
     def save_data(self, filename):
         """
         Comprehensive method to save all library data to a file.
         Replaces the previous separate save methods with a single unified approach.
-        
+
         Args:
             filename: Path to the file where data will be saved
         """
@@ -481,17 +487,17 @@ class LibraryManager:
         # Save to file
         with open(filename, 'w') as f:
             json.dump(data, f, indent=4)
-        
+
         print(f"Library data successfully saved to {filename}")
 
     def load_data(self, filename):
         """
         Comprehensive method to load all library data from a file.
         Replaces the previous separate load methods with a single unified approach.
-        
+
         Args:
             filename: Path to the file from which data will be loaded
-        
+
         Raises:
             FileNotFoundError: If the specified file doesn't exist
         """
@@ -532,19 +538,18 @@ class LibraryManager:
         # Load relationship maps
         if '_user_to_isbn_map' in data:
             self._user_to_isbn_map = data['_user_to_isbn_map']
-        
+
         if '_isbn_to_user_map' in data:
             self._isbn_to_user_map = data['_isbn_to_user_map']
 
         # Load the borrowing records
         if '_borrowing_records' in data:
             self._borrowing_records = data['_borrowing_records']
-        
+
         # Load waiting lists
         if '_waiting_lists' in data:
             self._waiting_lists = data['_waiting_lists']
 
-        
         # Reconnect borrowed books to users based on relationships
         for user_id, user in self.users.items():
             user.borrowed_books = []  # Reset borrowed_books list
@@ -553,7 +558,7 @@ class LibraryManager:
                     book = self.find_book_by_isbn(isbn)
                     if book:
                         user.borrowed_books.append(book)
-        
+
         print(f"Library data successfully loaded from {filename}")
 
     # For backward compatibility with existing code
@@ -571,7 +576,11 @@ class LibraryManager:
         """
         return self.load_data(filename)
 
+    def get_book_status(selfself, isbn):
+        pass
 
+    def get_user_books(self, user_id):
+        pass
 
 
 class TestLibraryManagerUserData(unittest.TestCase):

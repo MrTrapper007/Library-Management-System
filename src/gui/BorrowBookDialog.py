@@ -97,29 +97,57 @@ class BorrowBookDialog(tk.Toplevel):
             messagebox.showwarning("Warning", "Please select a book and a user.", parent=self)
             return
 
-        # Extract ISBN and User ID from the selected text
         try:
+            # Extract ISBN
             isbn_start = selected_book_text.find("(ISBN: ") + len("(ISBN: ")
             isbn_end = selected_book_text.find(")", isbn_start)
-            isbn = selected_book_text[isbn_start:isbn_end]
+            isbn = selected_book_text[isbn_start:isbn_end].strip()
 
+            # Extract User ID
             user_id_start = selected_user_text.find("(ID: ") + len("(ID: ")
             user_id_end = selected_user_text.find(")", user_id_start)
-            user_id = selected_user_text[user_id_start:user_id_end]
+            user_id = selected_user_text[user_id_start:user_id_end].strip()
 
-        except ValueError:
-            messagebox.showerror("Error", "Invalid book or user format.", parent=self)
-            return
+            # Try to borrow the book
+            if self.libMan.is_book_borrowed_by_user(isbn, user_id):
+                messagebox.showerror(
+                    "Error",
+                    f"This book is already borrowed by this user.",
+                    parent=self
+                )
+                return
 
-        # The correct order is user_id, isbn
-        success = self.libMan.borrow_book(user_id, isbn)
+            success = self.libMan.borrow_book(user_id, isbn)
+            if success:
+                messagebox.showinfo("Success", "Successfully borrowed book!", parent=self)
+                self.refresh_callback()
+                self.destroy()
+            else:
+                messagebox.showerror(
+                    "Error",
+                    "Unable to borrow the book. No copies available.",
+                    parent=self
+                )
 
-        if success:
-            messagebox.showinfo("Success", "Successfully borrowed book!", parent=self)
-            self.refresh_callback()
-            self.destroy()
-        else:
-            messagebox.showerror("Error", "Error occurred, book couldn't be borrowed", parent=self)
+        except ValueError as e:
+            messagebox.showerror(
+                "Error",
+                "Invalid book or user format.",
+                parent=self
+            )
+        except AttributeError as e:
+            messagebox.showerror(
+                "System Error",
+                "System configuration error. Please contact administrator.",
+                parent=self
+            )
+        except Exception as e:
+            messagebox.showerror(
+                "Error",
+                f"An unexpected error occurred: {str(e)}",
+                parent=self
+            )
+
 
     def on_cancel(self):
         self.destroy()
