@@ -1,0 +1,107 @@
+{
+    "users": {
+        "1234": {
+            "name": "Riad",
+            "user_id": "1234",
+            "borrowed_books": []
+        },
+        "2345": {
+            "name": "Lucca",
+            "user_id": "2345",
+            "borrowed_books": []
+        },
+        "3456": {
+            "name": "Moaz",
+            "user_id": "3456",
+            "borrowed_books": []
+        },
+        "4567": {
+            "name": "Professor",
+            "user_id": "4567",
+            "borrowed_books": []
+        }
+    },
+    "books": {
+        "1244-1234": {
+            "isbn": "1244-1234",
+            "title": "Harry Potter",
+            "author": "J.K Rowling",
+            "genre": "Fantasy",
+            "total_copies": 10,
+            "available_copies": 10
+        },
+        "2233-4455": {
+            "isbn": "2233-4455",
+            "title": "The Great Gatsby",
+            "author": "F. Scott Fitzgerald",
+            "genre": "Classic",
+            "total_copies": 8,
+            "available_copies": 8
+        },
+        "3344-5566": {
+            "isbn": "3344-5566",
+            "title": "1984",
+            "author": "George Orwell",
+            "genre": "Science Fiction",
+            "total_copies": 12,
+            "available_copies": 12
+        },
+        "4455-6677": {
+            "isbn": "4455-6677",
+            "title": "Pride and Prejudice",
+            "author": "Jane Austen",
+            "genre": "Romance",
+            "total_copies": 6,
+            "available_copies": 6
+        },
+        "5566-7788": {
+            "isbn": "5566-7788",
+            "title": "The Hobbit",
+            "author": "J.R.R. Tolkien",
+            "genre": "Fantasy",
+            "total_copies": 15,
+            "available_copies": 15
+        },
+        "6677-8899": {
+            "isbn": "6677-8899",
+            "title": "To Kill a Mockingbird",
+            "author": "Harper Lee",
+            "genre": "Fiction",
+            "total_copies": 9,
+            "available_copies": 9
+        },
+        "7788-9900": {
+            "isbn": "7788-9900",
+            "title": "The Catcher in the Rye",
+            "author": "J.D. Salinger",
+            "genre": "Fiction",
+            "total_copies": 7,
+            "available_copies": 7
+        },
+        "8899-0011": {
+            "isbn": "8899-0011",
+            "title": "Lord of the Flies",
+            "author": "William Golding",
+            "genre": "Fiction",
+            "total_copies": 11,
+            "available_copies": 11
+        },
+        "9900-1122": {
+            "isbn": "9900-1122",
+            "title": "The Da Vinci Code",
+            "author": "Dan Brown",
+            "genre": "Thriller",
+            "total_copies": 14,
+            "available_copies": 14
+        },
+        "0011-2233": {
+            "isbn": "0011-2233",
+            "title": "The Alchemist",
+            "author": "Paulo Coelho",
+            "genre": "Fiction",
+            "total_copies": 10,
+            "available_copies": 10
+        }
+    },
+    "_waiting_lists": {}
+}
