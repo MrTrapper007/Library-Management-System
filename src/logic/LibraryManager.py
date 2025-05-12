@@ -2,6 +2,8 @@
 import unittest
 import os
 import json
+from encodings.punycode import insertion_sort
+
 from src.obj_classes.Book import Book
 from src.obj_classes.User import User
 
@@ -95,12 +97,29 @@ class LibraryManager:
         return found_books  # return the list of all books found for this author
 
     def find_book_by_name(self, book_name):
-        # finds book by its name
-        found_books = None
-        for book in self.books.values():
-            if book.title.lower() == book_name.lower():
-                found_books = book
-                break  # stop searching after finding the first match
+        # finds book by its name (USES BINARY SEARCH YAY)
+        sorted_books = list(self.books.values())
+        book_name = book_name.lower()
+        left = 0
+        right = len(sorted_books) - 1
+
+        while left <= right:
+            mid = (left + right) // 2
+            mid_title = sorted_books[mid].title.lower()
+
+            if mid_title == book_name:
+                return sorted_books[mid]
+            elif mid_title > book_name:
+                right = mid - 1
+            else:
+                left = mid + 1
+
+        # If exact match not found, look for partial matches around the last searched position
+        for i in range(max(0, left - 1), min(len(sorted_books), left + 2)):
+            if book_name in sorted_books[i].title.lower():
+                return sorted_books[i]
+
+        return None
 
         # check if a book was found
         if found_books is None:
@@ -135,6 +154,37 @@ class LibraryManager:
 
         return book
 
+    def insertion_sort(self, dict, key_func=lambda b: b.title):
+        # Implement insertion sort algorithm
+        if not dict:
+            return []
+
+        data_list = list(dict.values())
+        if not data_list:
+            return []
+
+        # Determine if we're sorting users or books
+        if isinstance(data_list[0], User):
+            # Sort users by name
+            for i in range(1, len(data_list)):
+                current = data_list[i]
+                j = i - 1
+                while j >= 0 and data_list[j].name.lower() > current.name.lower():
+                    data_list[j + 1] = data_list[j]
+                    j -= 1
+                data_list[j + 1] = current
+        else:
+            # Sort books by title using the provided key function
+            for i in range(1, len(data_list)):
+                current = data_list[i]
+                j = i - 1
+                while j >= 0 and key_func(data_list[j]) > key_func(current):
+                    data_list[j + 1] = data_list[j]
+                    j -= 1
+                data_list[j + 1] = current
+
+        return data_list
+
     def list_all_books(self):
         # prints all the books in the library
         # Riad: i will make it return a list twin :3
@@ -142,10 +192,10 @@ class LibraryManager:
         if not self.books:
             print("No books found")
             return booklist
-
+    
         print("\n--- Library Book Collection ---")
-
-        sorted_books = sorted(self.books.values(), key=lambda b: b.title)
+    
+        sorted_books = self.insertion_sort(self.books, lambda b: b.title)
 
         for book in sorted_books:
             # print (and add to list) book details
@@ -213,7 +263,7 @@ class LibraryManager:
             return users_list
 
         print("\n--- Library Users ---")
-        sorted_users = sorted(self.users.values(), key=lambda u: u.name)
+        sorted_users = self.insertion_sort(self.users, lambda u: u.name.lower())
 
         for user in sorted_users:
             print(f"ID: {user.user_id}, Name: {user.name}")
