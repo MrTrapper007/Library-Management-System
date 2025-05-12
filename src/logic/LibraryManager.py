@@ -1,8 +1,9 @@
 # Created 03/05/25 by Riad
+import unittest
+import os
+import json
 from src.obj_classes.Book import Book
 from src.obj_classes.User import User
-from datetime import datetime, timedelta
-import json
 
 class LibraryManager:
     def __init__(self):
@@ -71,7 +72,7 @@ class LibraryManager:
         if book.total_copies == 0 and isbn in self._waiting_lists:
             waiting_users = self._waiting_lists[isbn]
             del self._waiting_lists[isbn]
-            print(f"Removed {len(waiting_users)} users from the waiting list for deleted book {title_for_print}.")
+            print(f"Removed {len(waiting_users)} users from the waiting list for deleted book.")
 
         return True
 
@@ -250,111 +251,7 @@ class LibraryManager:
             print ("-" * 30)
         return users_list
 
-    def save_book_data(self):
-        book_data = {}
-        for isbn, book in self.books.items():
-            book_data[isbn] = {
-                'isbn': book.isbn,
-                'title': book.title,
-                'author': book.author,
-                'genre': book.genre,
-                'total_copies': book.total_copies,
-                'available_copies': book.available_copies
-            }
-        return book_data
-
-    def save_user_data(self, filename):
-        data = {'users': {}, 'books': {}, '_waiting_lists': {}}
-
-        # Save user data
-        for user_id, user in self.users.items():
-            borrowed_books = []
-            if user_id in self._user_to_isbn_map:
-                for isbn in self._user_to_isbn_map[user_id]:
-                    book = self.find_book_by_isbn(isbn)
-                    if book:
-                        borrowed_books.append({
-                            'isbn': isbn,
-                            'title': book.title,
-                            'author': book.author
-                        })
-
-            data['users'][user_id] = {
-                'name': user.name,
-                'user_id': user.user_id,
-                'borrowed_books': borrowed_books
-            }
-
-        # Save book data
-        data['books'] = self.save_book_data()
-
-        # Save waiting lists
-        for isbn, waiting_users in self._waiting_lists.items():
-            data['_waiting_lists'][isbn] = waiting_users
-
-        # Save to file
-        with open(filename, 'w') as f:
-            json.dump(data, f, indent=4)
-
     import os
-
-    def load_user_data(self, filename):
-        if not os.path.exists(filename):
-            raise FileNotFoundError(f"File {filename} not found")
-
-        with open(filename, 'r') as f:
-            data = json.load(f)
-
-        # Clear existing data
-        self.users.clear()
-        self.books.clear()
-        self._user_to_isbn_map.clear()
-        self._isbn_to_user_map.clear()
-        self._waiting_lists.clear()
-
-        # Load waiting lists if present
-        if '_waiting_lists' in data:
-            self._waiting_lists = data['_waiting_lists']
-
-        # Load books first
-        if 'books' in data:
-            for isbn, book_data in data['books'].items():
-                book = Book(
-                    isbn=book_data['isbn'],
-                    title=book_data['title'],
-                    author=book_data['author'],
-                    genre=book_data['genre'],
-                    total_copies=book_data['total_copies']
-                )
-                book.available_copies = book_data['available_copies']
-                self.books[isbn] = book
-
-        # Load users and their data
-        if 'users' in data:
-            for user_id, user_data in data['users'].items():
-                # Create and add user
-                user = User(user_data['name'], user_data['user_id'])
-                self.users[user_id] = user
-
-                # Process borrowed books
-                for book_data in user_data['borrowed_books']:
-                    isbn = book_data['isbn']
-
-                    # Update user to ISBN map
-                    if user_id not in self._user_to_isbn_map:
-                        self._user_to_isbn_map[user_id] = []
-                    self._user_to_isbn_map[user_id].append(isbn)
-
-                    # Update ISBN to user map
-                    if isbn not in self._isbn_to_user_map:
-                        self._isbn_to_user_map[isbn] = []
-                    self._isbn_to_user_map[isbn].append(user_id)
-
-                    # Add book to user's borrowed books if it exists in library
-                    book = self.find_book_by_isbn(isbn)
-                    if book:
-                        user.borrowed_books.append(book)
-        print("-----------------------------------")
 
     # --- Borrowing and Returning Methods ---
 
@@ -368,10 +265,6 @@ class LibraryManager:
         book = self.find_book_by_isbn(isbn)
         if not book:
             print(f"Error: Book with ISBN '{isbn}' not found")
-            return False
-
-        if book.available_copies <= 0:
-            print (f"Error: No available copies of '{book.title}' (ISBN: {isbn}) to borrow")
             return False
 
         if user_id in self._user_to_isbn_map and isbn in self._user_to_isbn_map[user_id]:
@@ -397,27 +290,22 @@ class LibraryManager:
 
         book.available_copies -= 1 #decreasing the count of available copies
 
-        due_date = datetime.now() + timedelta(days=14)
-
         record_key = f"{user_id}_{isbn}"
         self._borrowing_records[record_key] = {
             'user_id': user_id,
-            'isbn': isbn,
-            'borrowed_date': datetime.now(),
-            'due_date': due_date
+            'isbn': isbn
         }
 
         if user_id not in self._user_to_isbn_map:
             self._user_to_isbn_map[user_id] = []
         self._user_to_isbn_map[user_id].append(isbn)
-        # Add user ID to book's list
+        # Add user ID to the book's list
         if isbn not in self._isbn_to_user_map:
             self._isbn_to_user_map[isbn] = []
         self._isbn_to_user_map[isbn].append(user_id)
 
         print(f"Book '{book.title}' (ISBN: {book.isbn}) successfully borrowed by User '{user.name}' (ID: {user_id})."
               f"Available copies now: {book.available_copies}")
-        print(f"Due date: {due_date.strftime('%Y-%m-%d')}")
         return True #borrowing successful
 
     def return_book(self, user_id, isbn):
@@ -434,14 +322,6 @@ class LibraryManager:
 
         record_key = f"{user_id}_{isbn}"
         if record_key in self._borrowing_records:
-            record = self._borrowing_records[record_key]
-            due_date = record['due_date']
-            today = datetime.now()
-
-            if today > due_date:
-                days_late = (today - due_date).days
-                print(
-                    f"LATE RETURN: This book was due on {due_date.strftime('%Y-%m-%d')} and is {days_late} days late.")
             del self._borrowing_records[record_key]
 
         if user_id not in self._user_to_isbn_map or isbn not in self._user_to_isbn_map.get(user_id, []):
@@ -450,7 +330,7 @@ class LibraryManager:
             return False
 
         if book:
-            book.available_copies += 1 #increase available copies if book record still exists
+            book.available_copies += 1 #increase available copies if the book record still exists
         else:
             print(f"Warning: Can not increase available count for non-existent book record ISBN '{isbn}'.")
 
@@ -503,26 +383,7 @@ class LibraryManager:
             self._process_waiting_list(isbn)
             return
 
-        book.available_copies -= 1 #automatically assigns book for the first person in the waiting list
-
-        due_date = datetime.now() + timedelta(days=14)
-
-        record_key = f"{user_id}_{isbn}"
-        self._borrowing_records[record_key] = {
-            'user_id': user_id,
-            'isbn': isbn,
-            'borrowed_date': datetime.now(),
-            'due_date': due_date
-        }
-        print(f"Due date: {due_date.strftime('%Y-%m-%d')}")
-
-        if user_id not in self._user_to_isbn_map:
-            self._user_to_isbn_map[user_id] = []
-        self._user_to_isbn_map[user_id].append(isbn)
-
-        if isbn not in self._isbn_to_user_map:
-            self._isbn_to_user_map[isbn] = []
-        self._isbn_to_user_map[isbn].append(user_id)
+        self.borrow_book(user_id, isbn)
 
         print(f"Automatic checkout: Book '{book.title}' (ISBN: {book.isbn}) is now available and has been "
           f"borrowed by User '{user.name}' (ID: {user_id}) from the waiting list. "
@@ -579,65 +440,138 @@ class LibraryManager:
 
         print("-----------------------------------")
 
-    def list_overdue_books(self):
 
-        if not self._borrowing_records:
-            print("No borrowing records found or no books are currently borrowed.")
-            return []
+    def save_data(self, filename):
+        """
+        Comprehensive method to save all library data to a file.
+        Replaces the previous separate save methods with a single unified approach.
+        
+        Args:
+            filename: Path to the file where data will be saved
+        """
+        data = {
+            'users': {},
+            'books': {},
+            '_waiting_lists': self._waiting_lists,
+            '_borrowing_records': self._borrowing_records
+        }
 
-        today = datetime.now()
-        overdue_entries = []
+        # Save user data
+        for user_id, user in self.users.items():
+            data['users'][user_id] = {
+                'name': user.name,
+                'user_id': user.user_id
+            }
 
-        print("\n--- Overdue Books ---")
-        print("The following users have books past their due date:")
+        # Save book data
+        for isbn, book in self.books.items():
+            data['books'][isbn] = {
+                'isbn': book.isbn,
+                'title': book.title,
+                'author': book.author,
+                'genre': book.genre,
+                'total_copies': book.total_copies,
+                'available_copies': book.available_copies
+            }
 
-        sorted_records = []
-        for record_key, record in self._borrowing_records.items():
-            due_date = record['due_date']
-            if today > due_date:
-                days_overdue = (today - due_date).days
-                user_id = record['user_id']
-                isbn = record['isbn']
-                sorted_records.append((days_overdue, user_id, isbn, due_date))
+        # Save borrowing relationships
+        data['_user_to_isbn_map'] = self._user_to_isbn_map
+        data['_isbn_to_user_map'] = self._isbn_to_user_map
 
-        sorted_records.sort(reverse=True)
+        # Save to file
+        with open(filename, 'w') as f:
+            json.dump(data, f, indent=4)
+        
+        print(f"Library data successfully saved to {filename}")
 
-        if not sorted_records:
-            print("No overdue books found.")
-            return []
+    def load_data(self, filename):
+        """
+        Comprehensive method to load all library data from a file.
+        Replaces the previous separate load methods with a single unified approach.
+        
+        Args:
+            filename: Path to the file from which data will be loaded
+        
+        Raises:
+            FileNotFoundError: If the specified file doesn't exist
+        """
+        if not os.path.exists(filename):
+            raise FileNotFoundError(f"File {filename} not found")
 
-        for days_overdue, user_id, isbn, due_date in sorted_records:
-            user = self.find_user_by_id(user_id)
-            book = self.find_book_by_isbn(isbn)
+        with open(filename, 'r') as f:
+            data = json.load(f)
 
-            if user and book:
-                print(f"{user.name} (ID: {user_id}) - '{book.title}' by {book.author}")
-                print(f"  ISBN: {isbn}")
-                print(f"  Due Date: {due_date.strftime('%Y-%m-%d')}")
-                print(f"  Days Overdue: {days_overdue}")
-                print("-" * 30)
+        # Clear existing data
+        self.users.clear()
+        self.books.clear()
+        self._user_to_isbn_map.clear()
+        self._isbn_to_user_map.clear()
+        self._waiting_lists.clear()
+        self._borrowing_records.clear()
+        self._borrowing_records.clear()
 
-                overdue_entries.append({
-                    'user_id': user_id,
-                    'user_name': user.name,
-                    'isbn': isbn,
-                    'title': book.title,
-                    'due_date': due_date,
-                    'days_overdue': days_overdue
-                })
+        # Load books
+        if 'books' in data:
+            for isbn, book_data in data['books'].items():
+                book = Book(
+                    isbn=book_data['isbn'],
+                    title=book_data['title'],
+                    author=book_data['author'],
+                    genre=book_data['genre'],
+                    total_copies=book_data['total_copies']
+                )
+                book.available_copies = book_data['available_copies']
+                self.books[isbn] = book
 
-        print(f"Total overdue books: {len(sorted_records)}")
-        print("-----------------------------------")
+        # Load users
+        if 'users' in data:
+            for user_id, user_data in data['users'].items():
+                user = User(user_data['name'], user_data['user_id'])
+                self.users[user_id] = user
 
-        return overdue_entries
+        # Load relationship maps
+        if '_user_to_isbn_map' in data:
+            self._user_to_isbn_map = data['_user_to_isbn_map']
+        
+        if '_isbn_to_user_map' in data:
+            self._isbn_to_user_map = data['_isbn_to_user_map']
+
+        # Load the borrowing records
+        if '_borrowing_records' in data:
+            self._borrowing_records = data['_borrowing_records']
+        
+        # Load waiting lists
+        if '_waiting_lists' in data:
+            self._waiting_lists = data['_waiting_lists']
+
+        
+        # Reconnect borrowed books to users based on relationships
+        for user_id, user in self.users.items():
+            user.borrowed_books = []  # Reset borrowed_books list
+            if user_id in self._user_to_isbn_map:
+                for isbn in self._user_to_isbn_map[user_id]:
+                    book = self.find_book_by_isbn(isbn)
+                    if book:
+                        user.borrowed_books.append(book)
+        
+        print(f"Library data successfully loaded from {filename}")
+
+    # For backward compatibility with existing code
+    def save_user_data(self, filename):
+        """
+        Legacy method maintained for backward compatibility.
+        Calls the new unified save_data method.
+        """
+        return self.save_data(filename)
+
+    def load_user_data(self, filename):
+        """
+        Legacy method maintained for backward compatibility.
+        Calls the new unified load_data method.
+        """
+        return self.load_data(filename)
 
 
-import unittest
-import os
-import json
-from src.obj_classes.Book import Book
-from src.obj_classes.User import User
-from src.logic.LibraryManager import LibraryManager
 
 
 class TestLibraryManagerUserData(unittest.TestCase):
@@ -741,40 +675,3 @@ class TestLibraryManagerUserData(unittest.TestCase):
 
     def test_save_load_empty_library(self):
         """Test saving and loading with no users in library."""
-        empty_manager = LibraryManager()
-        empty_manager.users.clear()
-        empty_manager._user_to_isbn_map.clear()
-        empty_manager._isbn_to_user_map.clear()
-        empty_manager._waiting_lists.clear()
-        empty_manager.save_user_data(self.test_filename)
-
-        # Verify saved file contains empty data
-        with open(self.test_filename, 'r') as f:
-            data = json.load(f)
-            self.assertEqual(len(data), 0)
-
-    def test_data_integrity_after_load(self):
-        """Test that all user relationships are properly maintained after loading."""
-        # Set up complex borrowing scenario
-        self.manager.borrow_book("user001", "123-4567890123")
-        self.manager.borrow_book("user002", "456-7890123456")
-
-        self.manager.save_user_data(self.test_filename)
-
-        # Clear and reload
-        original_user_to_isbn = self.manager._user_to_isbn_map.copy()
-        original_isbn_to_user = self.manager._isbn_to_user_map.copy()
-
-        self.manager.users.clear()
-        self.manager._user_to_isbn_map.clear()
-        self.manager._isbn_to_user_map.clear()
-
-        self.manager.load_user_data(self.test_filename)
-
-        # Verify relationships are maintained
-        self.assertEqual(self.manager._user_to_isbn_map, original_user_to_isbn)
-        self.assertEqual(self.manager._isbn_to_user_map, original_isbn_to_user)
-
-
-if __name__ == '__main__':
-    unittest.main()

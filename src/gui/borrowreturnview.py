@@ -47,7 +47,7 @@ class BorrowReturnView(tk.Frame):
 
         self.waiting_list_tree = ttk.Treeview(content_frame, columns=("Book Title", "Waiting List"), show="headings")
         self.waiting_list_tree.heading("Book Title", text="Book Title")
-        self.waiting_list_tree.heading("Waiting List", text="Waiting List (User IDs)")
+        self.waiting_list_tree.heading("Waiting List", text="Waiting List (Usernames)")
         self.waiting_list_tree.grid(row=3, column=0, sticky="nsew", padx=5)
 
 
@@ -76,10 +76,10 @@ class BorrowReturnView(tk.Frame):
             return
 
         for isbn, record in borrowed_records.items():
-            book = self.libMan.find_book_by_isbn(isbn)
+            book = self.libMan.find_book_by_isbn(record['isbn'])
             user = self.libMan.find_user_by_id(record['user_id'])
             if book and user:
-                self.borrowed_tree.insert("", "end", values=(book.title, user.name, isbn, record['user_id'] ))
+                self.borrowed_tree.insert("", "end", values=(book.title, user.name, record['isbn'], record['user_id'] ))
 
     def update_waiting_list_display(self):
         """Update the treeview with book waiting lists."""
